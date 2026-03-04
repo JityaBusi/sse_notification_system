@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:13
+    container_name: sse_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Somi@2495
+      POSTGRES_DB: eventsdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./seeds:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d eventsdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: sse_app
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgresql://postgres:Somi@2495@db:5432/eventsdb
+      PORT: 8080
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
